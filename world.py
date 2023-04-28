@@ -42,6 +42,7 @@ class Level:
             p.vel = vec(0, 0)
             p.platforms = self.group
             p.alive = True
+            p.finished = False
 
 
 class Block(pg.sprite.Sprite):
@@ -62,7 +63,7 @@ class Block(pg.sprite.Sprite):
         self.rect.midbottom = self.pos
         self.activated = False
 
-    def update(self, rect, vel):
+    def update(self, rect, vel, acc):
         pass
 
     def updateSprite(self, sprite):
@@ -100,7 +101,7 @@ class Platform(Block):
             if self.rect.bottom < self.pos.y:
                 self.rect.y += self.velocity
 
-    def update(self, rect, vel):
+    def update(self, rect, vel, acc):
         print("Collided with a platform")
 
 
@@ -119,12 +120,12 @@ class Lever(Block):
     def reset(self):
         self.updateSprite("assets/sprites/levers/lever_05_02.png")
 
-    def update(self, rect, vel):
-        if vel.x > 0:
+    def update(self, rect, vel, acc):
+        if vel.x > 8:
             self.activated = True
             self.link.activated = True
             self.updateSprite("assets/sprites/levers/lever_05_03.png")
-        elif vel.x < 0:
+        elif vel.x < -8:
             self.updateSprite("assets/sprites/levers/lever_05_02.png")
             self.link.activated = False
             self.activated = False

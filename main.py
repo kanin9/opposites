@@ -2,7 +2,7 @@ import pygame as pg
 import pygame.sprite
 from pygame.locals import *
 
-import firstlevel
+import levels
 import world
 from world import Block, load_image, Brick
 
@@ -62,6 +62,7 @@ class Player(pg.sprite.Sprite):
         self.grounded = False
         self.platforms = None
         self.alive = True
+        self.finished = False
 
         # self.surface = pg.Surface((80, 80))
         # self.surface.fill((128, 255, 40))
@@ -106,7 +107,10 @@ class Player(pg.sprite.Sprite):
                 if type(obj) is world.Water and self.identity == "fireboy":
                     self.alive = False
 
-                obj.update(self.rect, self.vel)
+                if type(obj) is world.Door:
+                    self.finished = True
+
+                obj.update(self.rect, self.vel, self.acc)
 
                 if not obj.collidable:
                     continue
@@ -130,7 +134,10 @@ class Player(pg.sprite.Sprite):
                     if type(obj) is world.Water and self.identity == "fireboy":
                         self.alive = False
 
-                    obj.update(self.rect, self.vel)
+                    obj.update(self.rect, self.vel, self.acc)
+
+                    if type(obj) is world.Door:
+                        self.finished = True
 
                     if not obj.collidable:
                         continue
@@ -141,6 +148,8 @@ class Player(pg.sprite.Sprite):
                         self.grounded = True
                     elif self.vel.y < 0:
                         self.vel.y = 0
+                        if type(obj) is world.Platform:
+                            continue
                         self.rect.top = obj.rect.bottom
 
         if self.rect.x > WIDTH - self.width:
@@ -157,17 +166,36 @@ class Player(pg.sprite.Sprite):
         # print(self.rect.x, self.rect.y)
 
 
+def pause(screen):
+    paused = True
+
+    message = pygame.font.Font('assets/font.ttf', 32).render("Нажмите 'C' чтобы продолжить", True, "Yellow")
+    messageRect = message.get_rect(center=(640, 320))
+
+    while paused:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                quit()
+
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_c:
+                    paused = False
+
+        screen.fill((0, 0, 0))
+        screen.blit(message, messageRect)
+
+
+        pg.display.update()
+
 def main():
     pg.init()
     pg.display.set_caption("Fireboy and Watergirl")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     running = True
 
-    # level0 = pg.sprite.Group()
-    # for block in firstlevel.layout:
-    #    level0.add(block)
-
-    level0 = firstlevel.FirstLevel()
+    level0 = levels.FirstLevel()
+    level1 = levels.FirstLevel()
 
     fireboy = Player("assets/sprites/fireboy.png", "fireboy")
     watergirl = Player("assets/sprites/watergirl.png", "watergirl")
@@ -184,6 +212,12 @@ def main():
 
     PLAY_TEXT = pygame.font.Font('assets/font.ttf', 42).render("Противоположности", True, "Yellow")
     PLAY_RECT = PLAY_TEXT.get_rect(center=(640, 260))
+
+    CONGRATS_TEXT = pygame.font.Font('assets/font.ttf', 42).render("Уровень пройден", True, "Yellow")
+    CONGRATS_RECT = CONGRATS_TEXT.get_rect(center=(640, 260))
+    NEXTLEVELBUTTON = Button(pos=(640, 360), text="Продолжить", color="Yellow",
+                             font=pygame.font.Font('assets/font.ttf', 32),
+                             hovercolor="Black")
 
     currentscreen = "main"
 
@@ -205,6 +239,8 @@ def main():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_r:
                     level0.reset([fireboy, watergirl])
+                if event.key == pg.K_ESCAPE:
+                    pause(screen)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if currentscreen == "main":
@@ -220,6 +256,10 @@ def main():
 
                     elif LEVEL1.clickEvent(mousepos):
                         currentscreen = "level1"
+                        objects = pg.sprite.Group()
+                        for obj in level1.start:
+                            objects.add(obj)
+                        level1.reset([fireboy, watergirl])
 
         screen.fill((0, 0, 0))
         screen.blit(bg, (0, 0))
@@ -234,18 +274,23 @@ def main():
             screen.blit(LEVEL1.text, LEVEL1.text_rect)
             LEVEL1.changeColor(mousepos)
 
-        if not fireboy.alive or not watergirl.alive:
-            level0.reset([fireboy, watergirl])
-
-        else:
-            fireboy.move((K_LEFT, K_RIGHT, K_DOWN, K_UP), events)
-            watergirl.move((K_a, K_d, K_s, K_w), events)
-
         for obj in level0.layout:
             obj.move()
 
         objects.draw(screen)
         players.draw(screen)
+
+        if not fireboy.alive or not watergirl.alive:
+            level0.reset([fireboy, watergirl])
+        else:
+            if watergirl.finished and fireboy.finished:
+                screen.blit(CONGRATS_TEXT, CONGRATS_RECT)
+                screen.blit(NEXTLEVELBUTTON.text, NEXTLEVELBUTTON.text_rect)
+                NEXTLEVELBUTTON.changeColor(mousepos)
+            if not fireboy.finished:
+                fireboy.move((K_LEFT, K_RIGHT, K_DOWN, K_UP), events)
+            if not watergirl.finished:
+                watergirl.move((K_a, K_d, K_s, K_w), events)
 
         pg.display.update()
         FramePerSec.tick(FPS)
