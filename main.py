@@ -223,6 +223,29 @@ def pause(screen):
         pg.display.update()
 
 
+def exit(screen):
+    paused = True
+
+    message = pygame.font.Font('assets/font.ttf', 22).render("Ваша игра сохранена, нажмите Q чтобы выйти", True,
+                                                             "Yellow")
+    messageRect = message.get_rect(center=(640, 320))
+
+    while paused:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                quit()
+
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_q:
+                    paused = False
+
+        screen.fill((0, 0, 0))
+        screen.blit(message, messageRect)
+
+        pg.display.update()
+
+
 def main(save):
     pg.init()
     pg.display.set_caption("Fireboy and Watergirl")
@@ -271,13 +294,18 @@ def main(save):
         for event in pg.event.get():
             events.append(event)
             if event.type == pg.QUIT:
+                exit(screen)
                 running = False
 
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_r:
                     level0.reset([fireboy, watergirl])
                 if event.key == pg.K_ESCAPE:
-                    pause(screen)
+                    if currentscreen != "main" and currentscreen != "select":
+                        pause(screen)
+                if event.key == pg.K_q:
+                    exit(screen)
+                    running = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if currentscreen == "main":
