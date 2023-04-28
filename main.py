@@ -104,7 +104,16 @@ class Player(pg.sprite.Sprite):
         if self.platforms is not None:
             hits = pg.sprite.spritecollide(self, self.platforms, False)
             for obj in hits:
-                if type(obj) is world.Water and self.identity == "fireboy":
+                if type(obj) is world.Water and not obj.activated and self.identity == "fireboy":
+                    self.alive = False
+
+                if type(obj) is world.Water and not obj.activated and self.identity == "watergirl":
+                    self.grounded = True
+
+                if type(obj) is world.Water and obj.activated and self.identity == "fireboy":
+                    self.grounded = True
+
+                if type(obj) is world.LavaMiddle and self.identity == "watergirl":
                     self.alive = False
 
                 if type(obj) is world.Door:
@@ -131,7 +140,29 @@ class Player(pg.sprite.Sprite):
             hits = pg.sprite.spritecollide(self, self.platforms, False)
             if hits:
                 for obj in hits:
-                    if type(obj) is world.Water and self.identity == "fireboy":
+                    if type(obj) is world.Water and not obj.activated and self.identity == "fireboy":
+                        self.alive = False
+
+                    if type(obj) is world.Water and not obj.activated and self.identity == "watergirl":
+                        self.grounded = True
+
+                    if type(obj) is world.Water and obj.activated and self.identity == "fireboy":
+                        self.grounded = True
+
+                    if type(obj) is world.Lava:
+                        if not obj.activated:
+                            if self.identity == "fireboy":
+                                self.grounded = True
+                            else:
+                                self.alive = False
+                        else:
+                            if self.identity == "fireboy":
+                                self.alive = False
+                            else:
+                                self.grounded = True
+
+
+                    if type(obj) is world.LavaMiddle and self.identity == "watergirl":
                         self.alive = False
 
                     obj.update(self.rect, self.vel, self.acc)
@@ -185,8 +216,8 @@ def pause(screen):
         screen.fill((0, 0, 0))
         screen.blit(message, messageRect)
 
-
         pg.display.update()
+
 
 def main():
     pg.init()
@@ -195,7 +226,7 @@ def main():
     running = True
 
     level0 = levels.FirstLevel()
-    level1 = levels.FirstLevel()
+    level1 = levels.SecondLevel()
 
     fireboy = Player("assets/sprites/fireboy.png", "fireboy")
     watergirl = Player("assets/sprites/watergirl.png", "watergirl")
@@ -226,6 +257,8 @@ def main():
     LEVEL1 = Button(pos=(640, 360), text="Второй уровень", color="Yellow", font=pygame.font.Font('assets/font.ttf', 32),
                     hovercolor="Black")
 
+    currentlevel = None
+
     while running:
         events = []
 
@@ -245,7 +278,6 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if currentscreen == "main":
                     if PLAY_BUTTON.clickEvent(mousepos):
-                        PLAY_BUTTON.color = "BLACK"
                         currentscreen = "select"
                 elif currentscreen == "select":
                     if LEVEL0.clickEvent(mousepos):
@@ -253,6 +285,7 @@ def main():
                         for obj in level0.start:
                             objects.add(obj)
                         level0.reset([fireboy, watergirl])
+                        currentlevel = level0
 
                     elif LEVEL1.clickEvent(mousepos):
                         currentscreen = "level1"
@@ -260,6 +293,27 @@ def main():
                         for obj in level1.start:
                             objects.add(obj)
                         level1.reset([fireboy, watergirl])
+                        currentlevel = level1
+                elif currentscreen == "level0":
+                    if NEXTLEVELBUTTON.clickEvent(mousepos):
+                        currentscreen = "level1"
+                        objects = pg.sprite.Group()
+                        for obj in level1.start:
+                            objects.add(obj)
+                        level1.reset([fireboy, watergirl])
+                        currentlevel = level1
+                elif currentscreen == "level1":
+                    if NEXTLEVELBUTTON.clickEvent(mousepos):
+                        currentscreen = "main"
+                        objects = pg.sprite.Group()
+                        for p in players:
+                            p.rect.x = WIDTH // 2
+                            p.rect.y = HEIGHT
+                            p.acc = vec(0, 0)
+                            p.vel = vec(0, 0)
+                            p.platforms = None
+                            p.alive = True
+                            p.finished = False
 
         screen.fill((0, 0, 0))
         screen.blit(bg, (0, 0))
@@ -274,22 +328,22 @@ def main():
             screen.blit(LEVEL1.text, LEVEL1.text_rect)
             LEVEL1.changeColor(mousepos)
 
-        for obj in level0.layout:
-            obj.move()
+        if currentlevel is not None:
+            for obj in currentlevel.layout:
+                obj.move()
 
         objects.draw(screen)
         players.draw(screen)
 
         if not fireboy.alive or not watergirl.alive:
-            level0.reset([fireboy, watergirl])
+            currentlevel.reset([fireboy, watergirl])
         else:
             if watergirl.finished and fireboy.finished:
                 screen.blit(CONGRATS_TEXT, CONGRATS_RECT)
                 screen.blit(NEXTLEVELBUTTON.text, NEXTLEVELBUTTON.text_rect)
                 NEXTLEVELBUTTON.changeColor(mousepos)
-            if not fireboy.finished:
+            else:
                 fireboy.move((K_LEFT, K_RIGHT, K_DOWN, K_UP), events)
-            if not watergirl.finished:
                 watergirl.move((K_a, K_d, K_s, K_w), events)
 
         pg.display.update()

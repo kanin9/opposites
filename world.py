@@ -49,6 +49,7 @@ class Block(pg.sprite.Sprite):
     def __init__(self, pos, width, height, collidable, image):
         super().__init__()
         self.activated = None
+        self.sprite = image
         self.img = load_image(image)
         self.width = width
         self.height = height
@@ -67,6 +68,10 @@ class Block(pg.sprite.Sprite):
         pass
 
     def updateSprite(self, sprite):
+        if self.sprite == sprite:
+            return
+
+        self.sprite = sprite
         self.img = load_image(sprite)
         self.image = pg.transform.smoothscale(self.img, (self.width, self.height))
         self.rect = self.image.get_rect(center=(self.width // 2, self.height // 2))
@@ -78,12 +83,51 @@ class Block(pg.sprite.Sprite):
 
 class Water(Block):
     def __init__(self, pos):
-        super(Water, self).__init__(pos, 40, 10, False, "assets/sprites/water.jpg")
+        super(Water, self).__init__(pos, 40, 35, False, "assets/sprites/water.jpg")
+        self.activated = False
+
+    def move(self):
+        if self.activated:
+            self.updateSprite("assets/sprites/Tiles_lava/lava_tile1.png")
+        else:
+            self.updateSprite("assets/sprites/water.jpg")
+
+
+class Lava(Block):
+    def __init__(self, pos):
+        super(Lava, self).__init__(pos, 40, 35, False, "assets/sprites/Tiles_lava/lava_tile1.png")
+        self.activated = False
+
+    def move(self):
+        if self.activated:
+            self.updateSprite("assets/sprites/water.jpg")
+        else:
+            self.updateSprite("assets/sprites/Tiles_lava/lava_tile1.png")
+
+
+class LavaMiddle(Block):
+    def __init__(self, pos):
+        super(LavaMiddle, self).__init__(pos, 40, 40, False, "assets/sprites/Tiles_lava/lava_tile6.png")
+
+
+class LavaLeft(Block):
+    def __init__(self, pos):
+        super(LavaLeft, self).__init__(pos, 40, 40, False, "assets/sprites/Tiles_lava/lava_tile5.png")
+
+
+class LavaRight(Block):
+    def __init__(self, pos):
+        super(LavaRight, self).__init__(pos, 40, 40, False, "assets/sprites/Tiles_lava/lava_tile7.png")
 
 
 class Brick(Block):
     def __init__(self, pos):
-        super(Brick, self).__init__(pos, 40, 40, True, "assets/sprites/brick.png")
+        super(Brick, self).__init__(pos, 40, 32, True, "assets/sprites/Tiles_rock/tile2s.png")
+
+
+class BrickOverhang(Block):
+    def __init__(self, pos):
+        super(BrickOverhang, self).__init__(pos, 40, 40, True, "assets/sprites/Tiles_rock/tile8.png")
 
 
 class Platform(Block):
@@ -121,12 +165,21 @@ class Lever(Block):
         self.updateSprite("assets/sprites/levers/lever_05_02.png")
 
     def update(self, rect, vel, acc):
-        if vel.x > 8:
+        if vel.x > 7:
             self.activated = True
-            self.link.activated = True
+            if type(self.link) == list:
+                for _ in self.link:
+                    _.activated = True
+            else:
+                self.link.activated = True
             self.updateSprite("assets/sprites/levers/lever_05_03.png")
-        elif vel.x < -8:
+        elif vel.x < -7:
             self.updateSprite("assets/sprites/levers/lever_05_02.png")
-            self.link.activated = False
+
+            if type(self.link) == list:
+                for _ in self.link:
+                    _.activated = False
+            else:
+                self.link.activated = False
             self.activated = False
         print("Collided with lever")
