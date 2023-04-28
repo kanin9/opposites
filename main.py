@@ -1,10 +1,15 @@
+import json
+
 import pygame as pg
 import pygame.sprite
 from pygame.locals import *
 
+import os
 import levels
 import world
 from world import Block, load_image, Brick
+
+main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 WIDTH = 1280
 HEIGHT = 640
@@ -33,12 +38,12 @@ class Button:
         self.rect = self.image.get_rect(center=(self.x_pos, self.y_pos))
         self.text_rect = self.text.get_rect(center=(self.x_pos, self.y_pos))
 
-    def changeColor(self, mouse):
+    def changeColor(self, mouse, color, hovercolor):
         if mouse[0] in range(self.rect.left, self.rect.right) and mouse[1] in range(self.rect.top,
                                                                                     self.rect.bottom):
-            self.text = self.font.render(self.input, True, self.hovercolor)
+            self.text = self.font.render(self.input, True, hovercolor)
         else:
-            self.text = self.font.render(self.input, True, self.color)
+            self.text = self.font.render(self.input, True, color)
 
     def clickEvent(self, mouse):
         if mouse[0] in range(self.rect.left, self.rect.right) and mouse[1] in range(self.rect.top, self.rect.bottom):
@@ -161,7 +166,6 @@ class Player(pg.sprite.Sprite):
                             else:
                                 self.grounded = True
 
-
                     if type(obj) is world.LavaMiddle and self.identity == "watergirl":
                         self.alive = False
 
@@ -219,7 +223,7 @@ def pause(screen):
         pg.display.update()
 
 
-def main():
+def main(save):
     pg.init()
     pg.display.set_caption("Fireboy and Watergirl")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -280,14 +284,14 @@ def main():
                     if PLAY_BUTTON.clickEvent(mousepos):
                         currentscreen = "select"
                 elif currentscreen == "select":
-                    if LEVEL0.clickEvent(mousepos):
+                    if LEVEL0.clickEvent(mousepos) and save['level0']:
                         currentscreen = "level0"
                         for obj in level0.start:
                             objects.add(obj)
                         level0.reset([fireboy, watergirl])
                         currentlevel = level0
 
-                    elif LEVEL1.clickEvent(mousepos):
+                    elif LEVEL1.clickEvent(mousepos) and save['level1']:
                         currentscreen = "level1"
                         objects = pg.sprite.Group()
                         for obj in level1.start:
@@ -295,14 +299,15 @@ def main():
                         level1.reset([fireboy, watergirl])
                         currentlevel = level1
                 elif currentscreen == "level0":
-                    if NEXTLEVELBUTTON.clickEvent(mousepos):
+                    if NEXTLEVELBUTTON.clickEvent(mousepos) and (watergirl.finished and fireboy.finished):
                         currentscreen = "level1"
+                        save['level1'] = True
                         objects = pg.sprite.Group()
                         for obj in level1.start:
                             objects.add(obj)
                         level1.reset([fireboy, watergirl])
                         currentlevel = level1
-                elif currentscreen == "level1":
+                elif currentscreen == "level1" and (watergirl.finished and fireboy.finished):
                     if NEXTLEVELBUTTON.clickEvent(mousepos):
                         currentscreen = "main"
                         objects = pg.sprite.Group()
@@ -318,15 +323,20 @@ def main():
         screen.fill((0, 0, 0))
         screen.blit(bg, (0, 0))
 
+        disabled = (60, 60, 60)
+
         if currentscreen == "main":
             screen.blit(PLAY_TEXT, PLAY_RECT)
-            PLAY_BUTTON.changeColor(mousepos)
+            PLAY_BUTTON.changeColor(mousepos, "YELLOW", "BLACK")
             screen.blit(PLAY_BUTTON.text, PLAY_BUTTON.text_rect)
         elif currentscreen == "select":
+            LEVEL0.changeColor(mousepos, "YELLOW", "BLACK")
+            if save['level1']:
+                LEVEL1.changeColor(mousepos, "YELLOW", "BLACK")
+            else:
+                LEVEL1.changeColor(mousepos, disabled, disabled)
             screen.blit(LEVEL0.text, LEVEL0.text_rect)
-            LEVEL0.changeColor(mousepos)
             screen.blit(LEVEL1.text, LEVEL1.text_rect)
-            LEVEL1.changeColor(mousepos)
 
         if currentlevel is not None:
             for obj in currentlevel.layout:
@@ -341,7 +351,7 @@ def main():
             if watergirl.finished and fireboy.finished:
                 screen.blit(CONGRATS_TEXT, CONGRATS_RECT)
                 screen.blit(NEXTLEVELBUTTON.text, NEXTLEVELBUTTON.text_rect)
-                NEXTLEVELBUTTON.changeColor(mousepos)
+                NEXTLEVELBUTTON.changeColor(mousepos, "YELLOW", "BLACK")
             else:
                 fireboy.move((K_LEFT, K_RIGHT, K_DOWN, K_UP), events)
                 watergirl.move((K_a, K_d, K_s, K_w), events)
@@ -351,5 +361,20 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    save = {
+        'level0': True,
+        'level1': False
+    }
+
+    try:
+        with open('save.json', 'r') as f:
+            save = json.loads(f.read())
+    except FileNotFoundError as e:
+        print(e)
+
+    main(save)
+
+    with open('save.json', 'w') as f:
+        f.write(json.dumps(save))
+
     pg.quit()
