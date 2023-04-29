@@ -124,7 +124,7 @@ class Player(pg.sprite.Sprite):
                 if type(obj) is world.Door:
                     self.finished = True
 
-                obj.update(self.rect, self.vel, self.acc, self.platforms)
+                obj.update(self.rect, self.vel, self.acc, self.platforms, self)
 
                 if not obj.collidable:
                     continue
@@ -170,7 +170,7 @@ class Player(pg.sprite.Sprite):
                     if type(obj) is world.LavaMiddle and self.identity == "watergirl":
                         self.alive = False
 
-                    obj.update(self.rect, self.vel, self.acc, self.platforms)
+                    obj.update(self.rect, self.vel, self.acc, self.platforms, self)
 
                     if type(obj) is world.Door:
                         self.finished = True
@@ -186,9 +186,12 @@ class Player(pg.sprite.Sprite):
                         if type(obj) is world.Platform:
                             self.vel.y = -1
 
+
                     elif self.vel.y < 0:
                         self.vel.y = 0
                         self.rect.top = obj.rect.bottom
+        else:
+            self.gravity = -1
 
         if self.rect.x > WIDTH - self.width:
             self.rect.x = WIDTH - self.width

@@ -3,6 +3,8 @@ import os
 import pygame as pg
 import pygame.sprite
 
+import world
+
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 vec = pg.math.Vector2
@@ -64,7 +66,7 @@ class Block(pg.sprite.Sprite):
         self.rect.midbottom = self.pos
         self.activated = False
 
-    def update(self, rect, vel, acc, platforms):
+    def update(self, rect, vel, acc, platforms, player):
         pass
 
     def updateSprite(self, sprite):
@@ -136,8 +138,12 @@ class Platform(Block):
         self.activated = False
         self.range = range
         self.velocity = 1
+        self.enabled = True
 
     def move(self):
+        if not self.enabled:
+            return
+
         if self.activated:
             if self.rect.bottom > self.pos.y - self.range:
                 self.rect.y -= self.velocity
@@ -145,9 +151,8 @@ class Platform(Block):
             if self.rect.bottom < self.pos.y:
                 self.rect.y += self.velocity
 
-    def update(self, rect, vel, acc, platforms):
-        #hits = pg.sprite.spritecollide(rect, platforms, False)
-        print("Collided with a platform")
+    def update(self, rect, vel, acc, platforms, player):
+        pass
 
 
 class Door(Block):
@@ -165,7 +170,7 @@ class Lever(Block):
     def reset(self):
         self.updateSprite("assets/sprites/levers/lever_05_02.png")
 
-    def update(self, rect, vel, acc, platforms):
+    def update(self, rect, vel, acc, platforms, player):
         if vel.x > 7:
             self.activated = True
             if type(self.link) == list:
