@@ -1,6 +1,6 @@
-## Игра для инкубатора от nFactorial
+## Игра для инкубатора от n!
 
-Fireboy and Watergirl
+Firеbоy and Wаtеrgirl
 
 Алихан Сиргалиев (С) 2023
 
