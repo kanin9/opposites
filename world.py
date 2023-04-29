@@ -64,7 +64,7 @@ class Block(pg.sprite.Sprite):
         self.rect.midbottom = self.pos
         self.activated = False
 
-    def update(self, rect, vel, acc):
+    def update(self, rect, vel, acc, platforms):
         pass
 
     def updateSprite(self, sprite):
@@ -145,7 +145,8 @@ class Platform(Block):
             if self.rect.bottom < self.pos.y:
                 self.rect.y += self.velocity
 
-    def update(self, rect, vel, acc):
+    def update(self, rect, vel, acc, platforms):
+        #hits = pg.sprite.spritecollide(rect, platforms, False)
         print("Collided with a platform")
 
 
@@ -164,7 +165,7 @@ class Lever(Block):
     def reset(self):
         self.updateSprite("assets/sprites/levers/lever_05_02.png")
 
-    def update(self, rect, vel, acc):
+    def update(self, rect, vel, acc, platforms):
         if vel.x > 7:
             self.activated = True
             if type(self.link) == list:
@@ -182,4 +183,4 @@ class Lever(Block):
             else:
                 self.link.activated = False
             self.activated = False
-        print("Collided with lever")
+        #print("Collided with lever")

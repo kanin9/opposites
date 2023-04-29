@@ -124,7 +124,7 @@ class Player(pg.sprite.Sprite):
                 if type(obj) is world.Door:
                     self.finished = True
 
-                obj.update(self.rect, self.vel, self.acc)
+                obj.update(self.rect, self.vel, self.acc, self.platforms)
 
                 if not obj.collidable:
                     continue
@@ -144,6 +144,7 @@ class Player(pg.sprite.Sprite):
         if self.platforms is not None:
             hits = pg.sprite.spritecollide(self, self.platforms, False)
             if hits:
+
                 for obj in hits:
                     if type(obj) is world.Water and not obj.activated and self.identity == "fireboy":
                         self.alive = False
@@ -169,7 +170,7 @@ class Player(pg.sprite.Sprite):
                     if type(obj) is world.LavaMiddle and self.identity == "watergirl":
                         self.alive = False
 
-                    obj.update(self.rect, self.vel, self.acc)
+                    obj.update(self.rect, self.vel, self.acc, self.platforms)
 
                     if type(obj) is world.Door:
                         self.finished = True
@@ -178,13 +179,15 @@ class Player(pg.sprite.Sprite):
                         continue
 
                     if self.vel.y > 0:
-                        self.vel.y = 0
                         self.rect.bottom = obj.rect.top
                         self.grounded = True
+                        self.vel.y = 0
+
+                        if type(obj) is world.Platform:
+                            self.vel.y = -1
+
                     elif self.vel.y < 0:
                         self.vel.y = 0
-                        if type(obj) is world.Platform:
-                            continue
                         self.rect.top = obj.rect.bottom
 
         if self.rect.x > WIDTH - self.width:
@@ -228,7 +231,13 @@ def exit(screen):
 
     message = pygame.font.Font('assets/font.ttf', 22).render("Ваша игра сохранена, нажмите Q чтобы выйти", True,
                                                              "Yellow")
-    messageRect = message.get_rect(center=(640, 320))
+    messageRect = message.get_rect(center=(640, 260))
+
+    messageS = pygame.font.Font('assets/font.ttf', 22).render("Или нажмите C чтобы вернуться к игре", True,
+                                                              "Yellow")
+    messageSRect = message.get_rect(center=(690, 360))
+
+    running = False
 
     while paused:
         for event in pg.event.get():
@@ -239,11 +248,17 @@ def exit(screen):
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_q:
                     paused = False
+                if event.key == pg.K_c:
+                    paused = False
+                    running = True
 
         screen.fill((0, 0, 0))
         screen.blit(message, messageRect)
+        screen.blit(messageS, messageSRect)
 
         pg.display.update()
+
+    return running
 
 
 def main(save):
@@ -304,8 +319,7 @@ def main(save):
                     if currentscreen != "main" and currentscreen != "select":
                         pause(screen)
                 if event.key == pg.K_q:
-                    exit(screen)
-                    running = False
+                    running = exit(screen)
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if currentscreen == "main":
