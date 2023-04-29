@@ -317,7 +317,7 @@ def main(save):
 
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_r:
-                    level0.reset([fireboy, watergirl])
+                    currentlevel.reset([fireboy, watergirl])
                 if event.key == pg.K_ESCAPE:
                     if currentscreen != "main" and currentscreen != "select":
                         pause(screen)
